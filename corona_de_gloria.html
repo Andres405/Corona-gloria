@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>👑 Corona de Gloria</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+/* ===================== VARIABLES ===================== */
+:root {
+  --gold: #FFD700; --gold2: #FFA500; --gold3: #8B6914;
+  --navy: #0d1f3c; --navy2: #1a3a6b; --navy3: #0a1628;
+  --white: #ffffff; --cream: #FFF8E7;
+  --red: #e74c3c; --green: #27ae60; --blue: #2980b9; --purple: #8e44ad;
+  --team1: #e74c3c; --team2: #2980b9; --team3: #27ae60; --team4: #8e44ad;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--navy3);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* ===================== SCREENS ===================== */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ===================== ROLE SELECT ===================== */
+#screen-role {
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 30px 20px;
+}
+
+.logo-wrap { text-align: center; margin-bottom: 36px; }
+.logo-crown { font-size: 72px; animation: float 3s ease-in-out infinite; display: block; margin-bottom: 10px; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+.logo-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(22px, 5vw, 40px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.6);
+  line-height: 1.2;
+}
+.logo-sub { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 6px; letter-spacing: 2px; text-transform: uppercase; }
+
+.role-cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 600px; }
+
+.role-card {
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,215,0,0.3);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1; min-width: 140px; max-width: 180px;
+}
+.role-card:hover, .role-card:active { background: rgba(255,215,0,0.15); border-color: var(--gold); transform: translateY(-4px); }
+.role-card .rc-icon { font-size: 44px; display: block; margin-bottom: 10px; }
+.role-card .rc-title { font-family: 'Cinzel Decorative', serif; font-size: 13px; color: var(--gold); margin-bottom: 4px; }
+.role-card .rc-desc { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+/* Firebase config notice */
+.config-notice {
+  margin-top: 28px;
+  background: rgba(255,165,0,0.15);
+  border: 1px solid rgba(255,165,0,0.4);
+  border-radius: 12px;
+  padding: 14px 18px;
+  max-width: 420px;
+  text-align: center;
+}
+.config-notice p { color: rgba(255,255,255,0.7); font-size: 12px; line-height: 1.6; }
+.config-notice strong { color: var(--gold); }
+
+/* ===================== TEAM SELECT ===================== */
+#screen-team {
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 30px 20px;
+}
+
+.team-header { text-align: center; margin-bottom: 28px; }
+.team-header h2 { font-family: 'Cinzel Decorative', serif; font-size: 20px; color: var(--gold); margin-bottom: 6px; }
+.team-header p { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+.lang-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+.lang-btn {
+  padding: 8px 20px; border-radius: 20px;
+  border: 2px solid rgba(255,215,0,0.4);
+  background: transparent; color: var(--gold);
+  font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.lang-btn.active { background: var(--gold); color: var(--navy); }
+
+.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 400px; }
+
+.team-btn {
+  padding: 20px 16px; border-radius: 18px;
+  border: 3px solid transparent;
+  color: white; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 16px;
+  cursor: pointer; transition: all 0.2s; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.team-btn .t-emoji { font-size: 36px; }
+.team-btn:active { transform: scale(0.96); }
+.team-btn.taken { opacity: 0.4; pointer-events: none; }
+.team-btn.t1 { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+.team-btn.t2 { background: linear-gradient(135deg, #1a5276, #2980b9); }
+.team-btn.t3 { background: linear-gradient(135deg, #1e8449, #27ae60); }
+.team-btn.t4 { background: linear-gradient(135deg, #6c3483, #8e44ad); }
+
+.name-input-wrap { margin-top: 20px; width: 100%; max-width: 400px; }
+.name-input {
+  width: 100%; padding: 14px 18px; border-radius: 14px;
+  border: 2px solid rgba(255,215,0,0.4);
+  background: rgba(255,255,255,0.08); color: white;
+  font-family: 'Nunito', sans-serif; font-size: 16px;
+  outline: none; margin-bottom: 12px;
+}
+.name-input::placeholder { color: rgba(255,255,255,0.3); }
+.name-input:focus { border-color: var(--gold); }
+
+.join-btn {
+  width: 100%; padding: 16px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, var(--gold2), var(--gold));
+  color: var(--navy); font-family: 'Cinzel Decorative', serif;
+  font-size: 16px; cursor: pointer; transition: all 0.2s;
+}
+.join-btn:active { transform: scale(0.97); }
+
+/* ===================== WAITING ROOM ===================== */
+#screen-waiting {
+  align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 30px 20px; text-align: center;
+}
+.waiting-title { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold); margin-bottom: 6px; }
+.waiting-sub { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 28px; }
+
+.teams-joined { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 380px; margin-bottom: 24px; }
+.team-joined-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.07); border-radius: 14px; padding: 12px 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.team-joined-row.active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+.tj-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+.tj-name { color: white; font-weight: 700; font-size: 15px; flex: 1; text-align: left; }
+.tj-status { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ===================== PROJECTOR SCREEN ===================== */
+#screen-projector {
+  background: linear-gradient(160deg, var(--navy3) 0%, var(--navy) 50%, #0f2550 100%);
+  position: relative; overflow: hidden;
+}
+
+/* Stars background */
+#screen-projector::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.proj-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px 12px;
+  border-bottom: 2px solid rgba(255,215,0,0.2);
+  background: rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.proj-logo { font-family: 'Cinzel Decorative', serif; font-size: clamp(14px,2.5vw,22px); color: var(--gold); }
+.proj-round { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+/* Teams scoreboard */
+.teams-bar {
+  display: flex; gap: 12px; padding: 14px 20px;
+  flex-shrink: 0; justify-content: center;
+}
+
+.team-score-card {
+  flex: 1; max-width: 200px;
+  border-radius: 16px; padding: 12px 16px;
+  text-align: center; position: relative;
+  border: 3px solid transparent;
+  transition: all 0.3s;
+}
+.team-score-card.active-turn {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
+  transform: translateY(-3px);
+}
+.tsc-crown { font-size: 20px; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; }
+.tsc-crown.visible { opacity: 1; }
+.tsc-name { font-weight: 900; font-size: clamp(12px,2vw,16px); color: white; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsc-points { font-family: 'Cinzel Decorative', serif; font-size: clamp(20px,3.5vw,32px); color: var(--gold); line-height: 1; }
+.tsc-pts-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+.tsc-t1 { background: linear-gradient(135deg, rgba(192,57,43,0.4), rgba(231,76,60,0.2)); border-color: rgba(231,76,60,0.3); }
+.tsc-t2 { background: linear-gradient(135deg, rgba(26,82,118,0.4), rgba(41,128,185,0.2)); border-color: rgba(41,128,185,0.3); }
+.tsc-t3 { background: linear-gradient(135deg, rgba(30,132,73,0.4), rgba(39,174,96,0.2)); border-color: rgba(39,174,96,0.3); }
+.tsc-t4 { background: linear-gradient(135deg, rgba(108,52,131,0.4), rgba(142,68,173,0.2)); border-color: rgba(142,68,173,0.3); }
+
+/* Main game area */
+.proj-main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 20px 10px;
+}
+
+/* Wheel */
+.wheel-wrap { position: relative; margin-bottom: 16px; }
+#wheel-canvas { filter: drop-shadow(0 0 20px rgba(255,215,0,0.3)); }
+.wheel-pointer {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  font-size: 28px; z-index: 10;
+}
+
+/* Category badge */
+.category-badge {
+  background: rgba(255,215,0,0.15);
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: 30px; padding: 6px 20px;
+  color: var(--gold); font-size: clamp(11px,1.8vw,15px);
+  font-weight: 700; letter-spacing: 1px;
+  margin-bottom: 14px; text-transform: uppercase;
+  text-align: center;
+}
+
+/* Phrase board */
+.phrase-board {
+  width: 100%; max-width: 860px;
+  background: rgba(0,0,0,0.4);
+  border: 2px solid rgba(255,215,0,0.3);
+  border-radius: 20px; padding: 20px;
+  margin-bottom: 14px;
+}
+
+.phrase-words { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: flex-end; }
+
+.word-group { display: flex; gap: 4px; }
+
+.letter-box {
+  width: clamp(22px,3.5vw,40px);
+  height: clamp(28px,4.5vw,50px);
+  border-bottom: 3px solid rgba(255,215,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 2px;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(14px,2.5vw,26px);
+  color: var(--gold);
+  font-weight: 700;
+  transition: all 0.3s;
+}
+.letter-box.revealed { animation: revealLetter 0.4s ease; }
+@keyframes revealLetter {
+  0% { transform: scaleY(0); opacity: 0; }
+  60% { transform: scaleY(1.2); }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+/* Timer */
+.timer-row { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.timer-circle {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 4px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel Decorative', serif; font-size: 20px; color: var(--gold);
+  flex-shrink: 0;
+  transition: border-color 0.3s, color 0.3s;
+}
+.timer-circle.urgent { border-color: var(--red); color: var(--red); animation: timerPulse 0.5s ease infinite; }
+@keyframes timerPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+.turn-label {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(13px,2vw,18px); color: white;
+  text-align: center; flex: 1;
+}
+.turn-label span { color: var(--gold); }
+
+/* Points value badge */
+.points-value-badge {
+  background: linear-gradient(135deg, var(--gold2), var(--gold));
+  color: var(--navy); font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(14px,2.5vw,22px); font-weight: 900;
+  padding: 6px 18px; border-radius: 20px;
+  flex-shrink: 0;
+}
+
+/* Status message */
+.status-msg {
+  font-size: clamp(14px,2vw,18px); color: rgba(255,255,255,0.7);
+  text-align: center; min-height: 28px;
+  font-weight: 700;
+}
+.status-msg.correct { color: #2ecc71; }
+.status-msg.wrong { color: #e74c3c; }
+.status-msg.timeout { color: #e67e22; }
+
+/* ===================== MODERATOR ===================== */
+#screen-moderator {
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 16px;
+}
+
+.mod-header {
+  text-align: center; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 2px solid rgba(255,215,0,0.2);
+}
+.mod-header h2 { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold); }
+.mod-header p { color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 4px; }
+
+.mod-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.mod-team-card {
+  border-radius: 14px; padding: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border: 2px solid transparent;
+}
+.mod-team-card.active-t { border-color: var(--gold); }
+.mtc-left { display: flex; align-items: center; gap: 8px; }
+.mtc-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.mtc-name { color: white; font-weight: 700; font-size: 14px; }
+.mtc-pts { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold); }
+
+.mtc-t1 { background: rgba(192,57,43,0.25); }
+.mtc-t2 { background: rgba(26,82,118,0.25); }
+.mtc-t3 { background: rgba(30,132,73,0.25); }
+.mtc-t4 { background: rgba(108,52,131,0.25); }
+
+.mod-phrase-box {
+  background: rgba(0,0,0,0.4); border: 2px solid rgba(255,215,0,0.2);
+  border-radius: 14px; padding: 14px; margin-bottom: 14px;
+  text-align: center;
+}
+.mod-phrase-text { color: var(--gold); font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.mod-category { color: rgba(255,255,255,0.4); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.mod-turn-info { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 8px; }
+.mod-points { color: var(--gold2); font-weight: 900; }
+
+.mod-actions { display: flex; flex-direction: column; gap: 10px; }
+
+.mod-btn {
+  padding: 14px 20px; border-radius: 14px; border: none;
+  font-family: 'Nunito', sans-serif; font-weight: 900;
+  font-size: 15px; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mod-btn:active { transform: scale(0.97); }
+
+.btn-spin { background: linear-gradient(135deg, var(--gold2), var(--gold)); color: var(--navy); }
+.btn-correct { background: linear-gradient(135deg, #1e8449, #27ae60); color: white; }
+.btn-wrong { background: linear-gradient(135deg, #922b21, #e74c3c); color: white; }
+.btn-next { background: linear-gradient(135deg, #1a5276, #2980b9); color: white; }
+.btn-end { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+.mod-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+.mod-timer-display {
+  background: rgba(0,0,0,0.3); border-radius: 10px; padding: 8px 14px;
+  text-align: center; color: var(--gold); font-family: 'Cinzel Decorative', serif;
+  font-size: 18px; margin-bottom: 10px;
+}
+
+/* ===================== PLAYER PANEL ===================== */
+#screen-player {
+  align-items: center; justify-content: flex-start;
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 0;
+}
+
+.player-header {
+  width: 100%; padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid rgba(255,215,0,0.2);
+  background: rgba(0,0,0,0.3); flex-shrink: 0;
+}
+.ph-team { display: flex; align-items: center; gap: 10px; }
+.ph-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+.ph-name { font-weight: 900; font-size: 16px; color: white; }
+.ph-pts { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold); }
+
+.player-content { flex: 1; width: 100%; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.player-phrase-mini {
+  background: rgba(0,0,0,0.4); border: 2px solid rgba(255,215,0,0.3);
+  border-radius: 16px; padding: 16px; width: 100%; text-align: center;
+}
+.ppm-cat { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.ppm-phrase { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: flex-end; }
+.ppm-word { display: flex; gap: 3px; }
+.ppm-letter {
+  width: 22px; height: 28px; border-bottom: 2px solid rgba(255,215,0,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  font-family: 'Cinzel Decorative', serif; font-size: 13px; color: var(--gold);
+  font-weight: 700; padding-bottom: 1px;
+}
+
+.my-turn-banner {
+  background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.1));
+  border: 2px solid var(--gold);
+  border-radius: 16px; padding: 14px 20px;
+  text-align: center; width: 100%;
+}
+.mtb-title { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold); margin-bottom: 4px; }
+.mtb-sub { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+.waiting-banner {
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 14px 20px;
+  text-align: center; width: 100%;
+}
+.wb-title { font-size: 16px; color: rgba(255,255,255,0.5); }
+.wb-sub { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 4px; }
+
+/* Keyboard */
+.keyboard-wrap { width: 100%; max-width: 480px; }
+.kb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+.kb-key {
+  min-width: 34px; height: 44px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.12); color: white;
+  font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 15px;
+  cursor: pointer; transition: all 0.1s; padding: 0 4px;
+  flex: 1; max-width: 44px;
+}
+.kb-key:active { background: rgba(255,215,0,0.4); transform: scale(0.93); }
+.kb-key.used-correct { background: rgba(39,174,96,0.5); color: rgba(255,255,255,0.4); pointer-events: none; }
+.kb-key.used-wrong { background: rgba(231,76,60,0.3); color: rgba(255,255,255,0.2); pointer-events: none; }
+.kb-key:disabled { opacity: 0.3; pointer-events: none; }
+
+.player-status {
+  text-align: center; font-size: 15px; font-weight: 700;
+  color: rgba(255,255,255,0.5); padding: 10px;
+}
+.player-status.my-win { color: #2ecc71; font-size: 18px; }
+.player-status.my-lose { color: #e74c3c; }
+
+/* ===================== GAME OVER ===================== */
+#screen-gameover {
+  align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #1a3a6b 0%, #0a1628 70%);
+  padding: 30px 20px; text-align: center;
+  flex-direction: column;
+}
+
+.go-title { font-family: 'Cinzel Decorative', serif; font-size: clamp(24px,5vw,40px); color: var(--gold); margin-bottom: 6px; text-shadow: 0 0 30px rgba(255,215,0,0.5); }
+.go-sub { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 30px; letter-spacing: 2px; }
+
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 28px; width: 100%; max-width: 500px; }
+
+.podium-place {
+  flex: 1; border-radius: 16px 16px 0 0; padding: 16px 12px;
+  text-align: center; position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+}
+.podium-place.p1 { height: 160px; background: linear-gradient(135deg, #f39c12, #FFD700); }
+.podium-place.p2 { height: 120px; background: linear-gradient(135deg, #7f8c8d, #bdc3c7); }
+.podium-place.p3 { height: 90px; background: linear-gradient(135deg, #935116, #a04000); }
+
+.pod-crown { font-size: 28px; position: absolute; top: -18px; left: 50%; transform: translateX(-50%); }
+.pod-name { color: var(--navy); font-weight: 900; font-size: 14px; margin-bottom: 2px; }
+.pod-pts { color: var(--navy); font-family: 'Cinzel Decorative', serif; font-size: 16px; }
+.pod-rank { color: rgba(0,0,0,0.4); font-size: 24px; font-weight: 900; margin-top: 4px; }
+
+.go-restart-btn {
+  background: linear-gradient(135deg, var(--gold2), var(--gold));
+  color: var(--navy); font-family: 'Cinzel Decorative', serif;
+  font-size: 16px; padding: 16px 40px; border-radius: 30px; border: none;
+  cursor: pointer; margin-top: 10px;
+}
+
+/* ===================== TOAST ===================== */
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.85); color: white;
+  padding: 12px 24px; border-radius: 30px;
+  font-size: 14px; font-weight: 700; z-index: 9999;
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ===================== CONFETTI ===================== */
+.confetti-piece {
+  position: fixed; pointer-events: none; z-index: 9998;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 600px) {
+  .teams-bar { gap: 6px; padding: 10px 12px; }
+  .team-score-card { padding: 8px 10px; border-radius: 12px; }
+  .phrase-board { padding: 14px 12px; }
+  .timer-row { gap: 8px; }
+  .timer-circle { width: 46px; height: 46px; font-size: 16px; }
+  .wheel-wrap { margin-bottom: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== SCREEN: ROLE SELECT ===================== -->
+<div id="screen-role" class="screen active">
+  <div class="logo-wrap">
+    <span class="logo-crown">👑</span>
+    <div class="logo-title">Corona de Gloria</div>
+    <div class="logo-sub">Biblical Word Game · Juego Bíblico</div>
+  </div>
+
+  <div class="role-cards">
+    <div class="role-card" onclick="selectRole('projector')">
+      <span class="rc-icon">📺</span>
+      <div class="rc-title">Projector</div>
+      <div class="rc-desc">Main screen / Pantalla principal</div>
+    </div>
+    <div class="role-card" onclick="selectRole('moderator')">
+      <span class="rc-icon">🎮</span>
+      <div class="rc-title">Moderator</div>
+      <div class="rc-desc">Game host / Director del juego</div>
+    </div>
+    <div class="role-card" onclick="selectRole('player')">
+      <span class="rc-icon">📱</span>
+      <div class="rc-title">Player / Jugador</div>
+      <div class="rc-desc">Join a team / Únete a un equipo</div>
+    </div>
+  </div>
+
+  <div class="config-notice" style="background:rgba(39,174,96,0.15);border-color:rgba(39,174,96,0.4);">
+    <p>✅ <strong>Firebase configurado y listo</strong> · corona-gloria<br>
+    Todos entran al mismo link · Everyone joins the same link</p>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: TEAM SELECT ===================== -->
+<div id="screen-team" class="screen">
+  <div class="team-header">
+    <h2 id="team-select-title">Choose Your Team</h2>
+    <p id="team-select-sub">Select your team and enter your name</p>
+  </div>
+
+  <div class="lang-row">
+    <button class="lang-btn active" onclick="setLang('en', this)">🇺🇸 English</button>
+    <button class="lang-btn" onclick="setLang('es', this)">🇲🇽 Español</button>
+  </div>
+
+  <div class="team-grid">
+    <div class="team-btn t1" id="tbtn-0" onclick="selectTeam(0)">
+      <span class="t-emoji">🔴</span>
+      <span id="tname-0">Team 1</span>
+    </div>
+    <div class="team-btn t2" id="tbtn-1" onclick="selectTeam(1)">
+      <span class="t-emoji">🔵</span>
+      <span id="tname-1">Team 2</span>
+    </div>
+    <div class="team-btn t3" id="tbtn-2" onclick="selectTeam(2)">
+      <span class="t-emoji">🟢</span>
+      <span id="tname-2">Team 3</span>
+    </div>
+    <div class="team-btn t4" id="tbtn-3" onclick="selectTeam(3)">
+      <span class="t-emoji">🟣</span>
+      <span id="tname-3">Team 4</span>
+    </div>
+  </div>
+
+  <div class="name-input-wrap">
+    <input class="name-input" id="player-name-input" type="text" maxlength="20" placeholder="Your team name / Nombre del equipo">
+    <button class="join-btn" id="join-btn" onclick="joinGame()" disabled>Join Game / Unirse al Juego →</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: WAITING ===================== -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-title" id="waiting-title">Waiting for the game to start...</div>
+  <div class="waiting-sub" id="waiting-sub">The moderator will begin soon / El moderador comenzará pronto</div>
+
+  <div class="teams-joined" id="teams-joined-list"></div>
+
+  <div class="pulse" style="color:rgba(255,215,0,0.5);font-size:13px;" id="waiting-pulse">⏳ Waiting... / Esperando...</div>
+</div>
+
+<!-- ===================== SCREEN: PROJECTOR ===================== -->
+<div id="screen-projector" class="screen">
+  <div class="proj-header">
+    <div class="proj-logo">👑 Corona de Gloria</div>
+    <div class="proj-round" id="proj-round">Round 1</div>
+  </div>
+
+  <div class="teams-bar" id="teams-bar">
+    <!-- filled dynamically -->
+  </div>
+
+  <div class="proj-main">
+    <div class="wheel-wrap" id="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheel-canvas" width="180" height="180"></canvas>
+    </div>
+
+    <div class="category-badge" id="proj-category">Category / Categoría</div>
+
+    <div class="phrase-board" id="proj-phrase-board">
+      <div class="phrase-words" id="proj-phrase-words"></div>
+    </div>
+
+    <div class="timer-row">
+      <div class="timer-circle" id="proj-timer">15</div>
+      <div class="turn-label" id="proj-turn-label">Waiting to start...</div>
+      <div class="points-value-badge" id="proj-points-badge">?</div>
+    </div>
+
+    <div class="status-msg" id="proj-status"></div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: MODERATOR ===================== -->
+<div id="screen-moderator" class="screen">
+  <div class="mod-header">
+    <h2>🎮 Moderator Panel</h2>
+    <p id="mod-game-code">Game room: loading...</p>
+  </div>
+
+  <div class="mod-teams" id="mod-teams-display"></div>
+
+  <div class="mod-timer-display" id="mod-timer-display">⏱ –</div>
+
+  <div class="mod-phrase-box">
+    <div class="mod-phrase-text" id="mod-phrase-text">–</div>
+    <div class="mod-category" id="mod-category-text">–</div>
+    <div class="mod-turn-info" id="mod-turn-info">–</div>
+  </div>
+
+  <div class="mod-actions">
+    <button class="mod-btn btn-spin" id="btn-spin" onclick="modSpin()">🎡 Spin Wheel / Girar Ruleta</button>
+    <button class="mod-btn btn-correct" id="btn-correct" onclick="modCorrect()" disabled>✅ Correct / Correcto (+pts)</button>
+    <button class="mod-btn btn-wrong" id="btn-wrong" onclick="modWrong()" disabled>❌ Wrong / Incorrecto → Next</button>
+    <button class="mod-btn btn-next" id="btn-next-phrase" onclick="modNextPhrase()" disabled>⏭ Next Phrase / Siguiente Frase</button>
+    <button class="mod-btn btn-end" onclick="modEndGame()">🏁 End Game / Terminar Juego</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: PLAYER ===================== -->
+<div id="screen-player" class="screen">
+  <div class="player-header">
+    <div class="ph-team">
+      <div class="ph-dot" id="ph-dot"></div>
+      <div class="ph-name" id="ph-name">–</div>
+    </div>
+    <div class="ph-pts" id="ph-pts">0 pts</div>
+  </div>
+
+  <div class="player-content">
+    <div class="player-phrase-mini" id="player-phrase-mini">
+      <div class="ppm-cat" id="ppm-cat">–</div>
+      <div class="ppm-phrase" id="ppm-phrase"></div>
+    </div>
+
+    <div id="my-turn-banner" class="my-turn-banner" style="display:none;">
+      <div class="mtb-title" id="mtb-title">🎯 Your Turn!</div>
+      <div class="mtb-sub" id="mtb-sub">Choose a letter / Elige una letra</div>
+    </div>
+
+    <div id="waiting-turn-banner" class="waiting-banner">
+      <div class="wb-title" id="wb-title">⏳ Waiting for your turn...</div>
+      <div class="wb-sub" id="wb-sub">Watch the projector screen</div>
+    </div>
+
+    <div class="keyboard-wrap" id="keyboard-wrap">
+      <div class="kb-row" id="kb-row-1"></div>
+      <div class="kb-row" id="kb-row-2"></div>
+      <div class="kb-row" id="kb-row-3"></div>
+    </div>
+
+    <div class="player-status" id="player-status"></div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: GAME OVER ===================== -->
+<div id="screen-gameover" class="screen">
+  <div class="go-title">🏆 Game Over!</div>
+  <div class="go-sub">FINAL RESULTS · RESULTADOS FINALES</div>
+  <div class="podium" id="podium"></div>
+  <button class="go-restart-btn" onclick="location.reload()">🔄 Play Again / Jugar de Nuevo</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================================================
+// FIREBASE CONFIGURATION
+// Replace with your Firebase project config
+// Reemplaza con tu configuración de Firebase
+// =====================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAzkA9GNlxDr2qGor2t1GWVDvLBwoZgF60",
+  authDomain: "corona-gloria.firebaseapp.com",
+  databaseURL: "https://corona-gloria-default-rtdb.firebaseio.com",
+  projectId: "corona-gloria",
+  storageBucket: "corona-gloria.firebasestorage.app",
+  messagingSenderId: "693322053843",
+  appId: "1:693322053843:web:61dd7bb53cbe32e3953c26"
+};
+
+// =====================================================
+// GAME DATA — 52 Biblical Phrases
+// =====================================================
+const PHRASES = [
+  {es:"ENEMISTAD ENTRE EL DRAGON Y LA MUJER", en:"ENMITY BETWEEN THE DRAGON AND THE WOMAN", cat_es:"Promesa del Génesis", cat_en:"Promise of Genesis"},
+  {es:"EUTICO CAYO POR UNA VENTANA", en:"EUTYCHUS FELL FROM A WINDOW", cat_es:"Historia N.T.", cat_en:"N.T. History"},
+  {es:"JUSTIFICACION POR LA FE", en:"JUSTIFICATION BY FAITH", cat_es:"Tema Central", cat_en:"Central Theme"},
+  {es:"AMIGOS DE DANIEL EN EL HORNO DE FUEGO", en:"DANIEL'S FRIENDS IN THE FIERY FURNACE", cat_es:"Historia A.T.", cat_en:"O.T. History"},
+  {es:"PARABOLA DE LAS DIEZ VIRGENES", en:"PARABLE OF THE TEN VIRGINS", cat_es:"Enseñanzas de Jesús", cat_en:"Teachings of Jesus"},
+  {es:"JUAN PRISIONERO EN LA ISLA DE PATMOS", en:"JOHN PRISONER ON THE ISLE OF PATMOS", cat_es:"Personaje / Momento", cat_en:"Character / Moment"},
+  {es:"PABLO FUE MORDIDO POR UNA SERPIENTE", en:"PAUL WAS BITTEN BY A SNAKE", cat_es:"Hechos de Apóstoles", cat_en:"Acts of Apostles"},
+  {es:"JESUS NAZARENO REY DE LOS JUDIOS", en:"JESUS OF NAZARETH KING OF THE JEWS", cat_es:"Inscripción", cat_en:"Inscription"},
+  {es:"OFRECEME A ISAAC EN SACRIFICIO", en:"OFFER ISAAC AS A SACRIFICE", cat_es:"Mandato a Abraham", cat_en:"God's Command to Abraham"},
+  {es:"SIMON DE CIRENE LLEVO LA CRUZ", en:"SIMON OF CYRENE CARRIED THE CROSS", cat_es:"Portador de la Cruz", cat_en:"Cross Bearer"},
+  {es:"ELIAS Y EL CARRO DE FUEGO", en:"ELIJAH AND THE CHARIOT OF FIRE", cat_es:"Personaje Bíblico", cat_en:"Biblical Character"},
+  {es:"SAUL ARROJO UNA LANZA A DAVID", en:"SAUL THREW A SPEAR AT DAVID", cat_es:"Después de Goliat", cat_en:"After Goliath"},
+  {es:"LLOVIO CUARENTA DIAS Y CUARENTA NOCHES", en:"IT RAINED FORTY DAYS AND FORTY NIGHTS", cat_es:"El Diluvio", cat_en:"The Flood"},
+  {es:"EL ESTANQUE DE BETESDA SE MOVIA", en:"THE POOL OF BETHESDA WAS STIRRED", cat_es:"Los enfermos sanaban si...", cat_en:"The sick were healed if..."},
+  {es:"LEVANTATE TOMA TU LECHO Y ANDA", en:"GET UP TAKE YOUR MAT AND WALK", cat_es:"Palabras de Jesús", cat_en:"Words of Jesus"},
+  {es:"ZAQUEO SUBIO AL SICOMORO", en:"ZACCHAEUS CLIMBED THE SYCAMORE", cat_es:"Personaje Bíblico", cat_en:"Biblical Character"},
+  {es:"LUCAS ERA MEDICO", en:"LUKE WAS A DOCTOR", cat_es:"Personaje y Profesión", cat_en:"Character and Profession"},
+  {es:"EL ESPIRITU DESCENDIO SOBRE ELLOS", en:"THE SPIRIT DESCENDED UPON THEM", cat_es:"Hechos de Apóstoles", cat_en:"Acts of Apostles"},
+  {es:"ES SEMEJANTE A UN SEMBRADOR", en:"IT IS LIKE A SOWER", cat_es:"El Reino de los Cielos", cat_en:"Kingdom of Heaven"},
+  {es:"MARANATA CRISTO VIENE", en:"MARANATHA CHRIST IS COMING", cat_es:"Saludo Cristiano", cat_en:"Christian Greeting"},
+  {es:"AMIGO HAY MAS UNIDO QUE UN HERMANO", en:"A FRIEND IS CLOSER THAN A BROTHER", cat_es:"Vínculos de Amor", cat_en:"Bonds of Love"},
+  {es:"TU PALABRA ES LAMPARA A MIS PIES", en:"YOUR WORD IS A LAMP TO MY FEET", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"JONAS Y EL GRAN PEZ", en:"JONAH AND THE GREAT FISH", cat_es:"Historia Conocida", cat_en:"Well-Known Story"},
+  {es:"LA FAMILIA DE LOT HUYO DE SODOMA", en:"LOT'S FAMILY FLED FROM SODOM", cat_es:"Historia A.T.", cat_en:"O.T. History"},
+  {es:"ESTATUA DE METALES DE DANIEL", en:"DANIEL'S STATUE OF METALS", cat_es:"Visión de Daniel", cat_en:"Daniel's Vision"},
+  {es:"AMA A TU PROJIMO", en:"LOVE YOUR NEIGHBOR", cat_es:"Mandamiento Divino", cat_en:"Divine Commandment"},
+  {es:"SANTIFICA EL SABADO", en:"KEEP THE SABBATH HOLY", cat_es:"Mandamiento Divino", cat_en:"Divine Commandment"},
+  {es:"EL PADRE DE JESUS ERA CARPINTERO", en:"THE FATHER OF JESUS WAS A CARPENTER", cat_es:"Dato Histórico", cat_en:"Historical Fact"},
+  {es:"PILATO SE LAVO LAS MANOS", en:"PILATE WASHED HIS HANDS", cat_es:"Dato Histórico", cat_en:"Historical Fact"},
+  {es:"LOS REYES MAGOS DE ORIENTE", en:"THE WISE MEN FROM THE EAST", cat_es:"Personajes Bíblicos", cat_en:"Biblical Characters"},
+  {es:"Y JESUS LLORO", en:"AND JESUS WEPT", cat_es:"Versículo Bíblico", cat_en:"Biblical Verse"},
+  {es:"JUSTIFICADOS PUES POR LA FE EN JESUCRISTO", en:"JUSTIFIED BY FAITH IN JESUS CHRIST", cat_es:"Versículo Bíblico", cat_en:"Biblical Verse"},
+  {es:"JESUS TE AMA", en:"JESUS LOVES YOU", cat_es:"Afirmación", cat_en:"Affirmation"},
+  {es:"DIOS ES AMOR", en:"GOD IS LOVE", cat_es:"Afirmación", cat_en:"Affirmation"},
+  {es:"LOS CIELOS CUENTAN LA GLORIA DE DIOS Y SU OBRA", en:"THE HEAVENS DECLARE THE GLORY OF GOD", cat_es:"Salmo", cat_en:"Psalm"},
+  {es:"YO SOY EL CAMINO LA VERDAD Y LA VIDA", en:"I AM THE WAY THE TRUTH AND THE LIFE", cat_es:"Palabras de Jesús", cat_en:"Words of Jesus"},
+  {es:"DIOS ES TU AMPARO Y AUXILIO EN LA TRIBULACION", en:"GOD IS YOUR REFUGE AND STRENGTH IN TROUBLE", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"CON AMOR ETERNO TE HE AMADO", en:"WITH EVERLASTING LOVE I HAVE LOVED YOU", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"TODA LA ESCRITURA ES INSPIRADA POR DIOS", en:"ALL SCRIPTURE IS INSPIRED BY GOD", cat_es:"Afirmación", cat_en:"Affirmation"},
+  {es:"LAMPARA ES A MIS PIES TU PALABRA", en:"YOUR WORD IS A LAMP TO MY FEET", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"TODO REINO DIVIDIDO CONTRA SI ES ASOLADO", en:"A KINGDOM DIVIDED AGAINST ITSELF IS RUINED", cat_es:"Palabras de Jesús", cat_en:"Words of Jesus"},
+  {es:"LA PALABRA DE DIOS PERMANECE PARA SIEMPRE", en:"THE WORD OF GOD ENDURES FOREVER", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"PERO SIN FE ES IMPOSIBLE AGRADAR A DIOS", en:"WITHOUT FAITH IT IS IMPOSSIBLE TO PLEASE GOD", cat_es:"Afirmación", cat_en:"Affirmation"},
+  {es:"ORAD SIN CESAR", en:"PRAY WITHOUT CEASING", cat_es:"Versículo General", cat_en:"General Verse"},
+  {es:"CLAMARE Y EL OIRA MI VOZ", en:"I WILL CRY OUT AND HE WILL HEAR MY VOICE", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"VELAD Y ORAD PARA QUE NO ENTREIS EN TENTACION", en:"WATCH AND PRAY THAT YOU DO NOT FALL INTO TEMPTATION", cat_es:"Exhortación", cat_en:"Exhortation"},
+  {es:"LA ORACION EFICAZ DEL JUSTO PUEDE MUCHO", en:"THE PRAYER OF A RIGHTEOUS PERSON IS POWERFUL", cat_es:"Afirmación", cat_en:"Affirmation"},
+  {es:"LLAMAD Y SE OS ABRIRA", en:"KNOCK AND IT SHALL BE OPENED TO YOU", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"EN LA CASA DE MI PADRE MUCHAS MORADAS HAY", en:"IN MY FATHER'S HOUSE THERE ARE MANY ROOMS", cat_es:"Palabras de Jesús", cat_en:"Words of Jesus"},
+  {es:"VIENE EN LAS NUBES Y TODO OJO LE VERA", en:"HE IS COMING WITH THE CLOUDS AND EVERY EYE WILL SEE HIM", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"},
+  {es:"VENDRA EN UNA NUBE CON PODER Y GRAN GLORIA", en:"HE WILL COME IN A CLOUD WITH POWER AND GREAT GLORY", cat_es:"Promesa del Cielo", cat_en:"Heavenly Promise"}
+];
+
+const WHEEL_VALUES = [100, 200, 300, 500, 200, 100, 300, 200];
+const WHEEL_COLORS = ['#e74c3c','#f39c12','#2980b9','#FFD700','#8e44ad','#e74c3c','#27ae60','#f39c12'];
+const TEAM_COLORS = ['#e74c3c','#2980b9','#27ae60','#8e44ad'];
+const TEAM_BG = ['rgba(192,57,43,0.3)','rgba(26,82,118,0.3)','rgba(30,132,73,0.3)','rgba(108,52,131,0.3)'];
+const TEAM_EMOJIS = ['🔴','🔵','🟢','🟣'];
+const CROWNS = ['👑','🥈','🥉',''];
+
+// =====================================================
+// STATE
+// =====================================================
+let db, gameRef;
+let myRole = null; // 'projector' | 'moderator' | 'player'
+let myTeamIdx = -1;
+let myLang = 'en';
+let currentState = null;
+let wheelAngle = 0;
+let wheelSpinning = false;
+let timerInterval = null;
+let usedKeys = {};
+
+// =====================================================
+// FIREBASE INIT
+// =====================================================
+function initFirebase() {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    gameRef = db.ref('corona_gloria_game');
+    return true;
+  } catch(e) {
+    showToast('⚠️ Firebase not configured / Firebase no configurado');
+    return false;
+  }
+}
+
+function listenGame() {
+  gameRef.on('value', snap => {
+    const data = snap.val();
+    if (!data) return;
+    currentState = data;
+    renderFromState(data);
+  });
+}
+
+function updateGame(patch) {
+  if (!gameRef) return;
+  gameRef.update(patch);
+}
+
+// =====================================================
+// ROLE SELECT
+// =====================================================
+function selectRole(role) {
+  myRole = role;
+  if (!initFirebase()) return;
+
+  if (role === 'projector') {
+    showScreen('projector');
+    listenGame();
+    drawWheelIdle();
+  } else if (role === 'moderator') {
+    showScreen('moderator');
+    listenGame();
+    // Init game if not exists
+    gameRef.once('value', snap => {
+      if (!snap.val() || !snap.val().status) {
+        initGameState();
+      }
+    });
+  } else if (role === 'player') {
+    showScreen('team');
+    listenGame();
+  }
+}
+
+// =====================================================
+// GAME STATE INIT
+// =====================================================
+function initGameState() {
+  const shuffled = [...PHRASES].sort(() => Math.random() - 0.5);
+  gameRef.set({
+    status: 'waiting',
+    round: 1,
+    phraseIdx: 0,
+    phrases: shuffled.map(p => ({es:p.es, en:p.en, cat_es:p.cat_es, cat_en:p.cat_en})),
+    currentPhrase: shuffled[0],
+    revealedLetters: [],
+    currentTeamTurn: 0,
+    spinValue: null,
+    wheelSpun: false,
+    teams: {
+      0: {name:'Team 1', points:0, active:false, lang:'en'},
+      1: {name:'Team 2', points:0, active:false, lang:'en'},
+      2: {name:'Team 3', points:0, active:false, lang:'en'},
+      3: {name:'Team 4', points:0, active:false, lang:'en'},
+    },
+    statusMsg: '',
+    statusType: '',
+    timerStart: null,
+    timerDuration: 0,
+  });
+}
+
+// =====================================================
+// SCREENS
+// =====================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+// =====================================================
+// PLAYER FLOW
+// =====================================================
+let selectedTeamIdx = -1;
+
+function setLang(lang, btn) {
+  myLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateTeamLabels();
+}
+
+function updateTeamLabels() {
+  const labels = myLang === 'es'
+    ? ['Equipo 1','Equipo 2','Equipo 3','Equipo 4']
+    : ['Team 1','Team 2','Team 3','Team 4'];
+  labels.forEach((l,i) => {
+    const el = document.getElementById('tname-' + i);
+    if (el) el.textContent = l;
+  });
+  document.getElementById('team-select-title').textContent = myLang === 'es' ? 'Elige tu Equipo' : 'Choose Your Team';
+  document.getElementById('team-select-sub').textContent = myLang === 'es' ? 'Selecciona tu equipo e ingresa tu nombre' : 'Select your team and enter your name';
+  document.getElementById('player-name-input').placeholder = myLang === 'es' ? 'Nombre del equipo' : 'Team name';
+  document.getElementById('join-btn').textContent = myLang === 'es' ? 'Unirse al Juego →' : 'Join Game →';
+}
+
+function selectTeam(idx) {
+  if (!currentState) return;
+  const teams = currentState.teams || {};
+  if (teams[idx] && teams[idx].active) { showToast(myLang === 'es' ? 'Ese equipo ya está tomado' : 'That team is already taken'); return; }
+  selectedTeamIdx = idx;
+  document.querySelectorAll('.team-btn').forEach((b,i) => {
+    b.style.outline = i === idx ? '4px solid var(--gold)' : 'none';
+  });
+  document.getElementById('join-btn').disabled = false;
+}
+
+function joinGame() {
+  const name = document.getElementById('player-name-input').value.trim();
+  if (!name) { showToast(myLang === 'es' ? 'Ingresa el nombre de tu equipo' : 'Enter your team name'); return; }
+  if (selectedTeamIdx < 0) { showToast(myLang === 'es' ? 'Elige un equipo' : 'Choose a team'); return; }
+  myTeamIdx = selectedTeamIdx;
+
+  updateGame({
+    [`teams/${myTeamIdx}/name`]: name,
+    [`teams/${myTeamIdx}/active`]: true,
+    [`teams/${myTeamIdx}/lang`]: myLang,
+    [`teams/${myTeamIdx}/points`]: 0,
+  });
+
+  showScreen('waiting');
+  renderWaiting();
+}
+
+// =====================================================
+// RENDER FROM STATE
+// =====================================================
+function renderFromState(state) {
+  if (!state) return;
+
+  // Update waiting screen
+  if (myRole === 'player') renderWaiting(state);
+
+  // Projector
+  if (myRole === 'projector') renderProjector(state);
+
+  // Moderator
+  if (myRole === 'moderator') renderModerator(state);
+
+  // Player
+  if (myRole === 'player' && state.status === 'playing') {
+    showScreen('player');
+    renderPlayer(state);
+  }
+
+  // Game over
+  if (state.status === 'gameover') {
+    setTimeout(() => {
+      showScreen('gameover');
+      renderGameOver(state);
+    }, 1000);
+  }
+}
+
+// =====================================================
+// PROJECTOR RENDER
+// =====================================================
+function renderProjector(state) {
+  if (!state) return;
+  const teams = state.teams || {};
+  const lang = 'en'; // projector shows both
+
+  // Teams bar
+  const bar = document.getElementById('teams-bar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const t = teams[i] || {name:'–',points:0,active:false};
+    if (!t.active) continue;
+    const card = document.createElement('div');
+    card.className = `team-score-card tsc-t${i+1}${state.currentTeamTurn === i ? ' active-turn' : ''}`;
+    card.id = `tsc-${i}`;
+
+    // Crown for leader
+    const pts = Object.values(teams).map(t=>t.points||0);
+    const maxPts = Math.max(...pts);
+    const showCrown = t.points > 0 && t.points === maxPts;
+
+    card.innerHTML = `
+      <div class="tsc-crown ${showCrown ? 'visible' : ''}">👑</div>
+      <div class="tsc-name">${TEAM_EMOJIS[i]} ${t.name}</div>
+      <div class="tsc-points">${t.points||0}</div>
+      <div class="tsc-pts-label">pts</div>
+    `;
+    bar.appendChild(card);
+  }
+
+  // Round
+  document.getElementById('proj-round').textContent = `Round ${state.round || 1} · Q${(state.phraseIdx||0)+1}/${(state.phrases||[]).length}`;
+
+  // Phrase
+  const phrase = state.currentPhrase;
+  if (phrase) {
+    const text = phrase.es; // always use Spanish text
+    const catEs = phrase.cat_es || '';
+    const catEn = phrase.cat_en || '';
+    document.getElementById('proj-category').textContent = `${catEs} · ${catEn}`;
+    renderPhraseBoard('proj-phrase-words', text, state.revealedLetters || [], 'proj');
+  }
+
+  // Turn label
+  const ct = teams[state.currentTeamTurn];
+  const ctName = ct ? ct.name : '–';
+  document.getElementById('proj-turn-label').innerHTML =
+    state.status === 'waiting' ? 'Waiting to start... / Esperando...' :
+    state.status === 'playing' ? `<span>${TEAM_EMOJIS[state.currentTeamTurn]} ${ctName}</span>'s turn` :
+    state.status === 'spinning' ? `🎡 ${TEAM_EMOJIS[state.currentTeamTurn]} ${ctName} spinning...` : '';
+
+  // Points badge
+  document.getElementById('proj-points-badge').textContent = state.spinValue ? `+${state.spinValue}` : '?';
+
+  // Status message
+  const sm = document.getElementById('proj-status');
+  sm.textContent = state.statusMsg || '';
+  sm.className = 'status-msg ' + (state.statusType || '');
+
+  // Timer
+  if (state.timerStart && state.timerDuration) {
+    const elapsed = (Date.now() - state.timerStart) / 1000;
+    const left = Math.max(0, state.timerDuration - elapsed);
+    const tc = document.getElementById('proj-timer');
+    tc.textContent = Math.ceil(left);
+    tc.className = 'timer-circle' + (left <= 5 ? ' urgent' : '');
+  } else {
+    document.getElementById('proj-timer').textContent = '–';
+    document.getElementById('proj-timer').className = 'timer-circle';
+  }
+
+  // Wheel spin trigger
+  if (state.wheelSpun && state.spinValue && !wheelSpinning) {
+    spinWheelTo(state.spinValue);
+  }
+}
+
+// =====================================================
+// PHRASE BOARD RENDER
+// =====================================================
+function renderPhraseBoard(containerId, text, revealed, prefix) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const words = text.split(' ');
+  words.forEach(word => {
+    const wg = document.createElement('div');
+    wg.className = prefix === 'proj' ? 'word-group' : 'ppm-word';
+    word.split('').forEach(ch => {
+      const lb = document.createElement('div');
+      lb.className = prefix === 'proj' ? 'letter-box' : 'ppm-letter';
+      const norm = ch.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+      if (revealed.includes(norm) || revealed.includes(ch.toUpperCase())) {
+        lb.textContent = ch.toUpperCase();
+        lb.classList.add('revealed');
+      }
+      wg.appendChild(lb);
+    });
+    container.appendChild(wg);
+  });
+}
+
+// =====================================================
+// MODERATOR RENDER
+// =====================================================
+function renderModerator(state) {
+  if (!state) return;
+  const teams = state.teams || {};
+
+  // Teams
+  const td = document.getElementById('mod-teams-display');
+  td.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const t = teams[i] || {name:`Team ${i+1}`, points:0, active:false};
+    const card = document.createElement('div');
+    card.className = `mod-team-card mtc-t${i+1}${state.currentTeamTurn === i ? ' active-t' : ''}`;
+    card.innerHTML = `
+      <div class="mtc-left">
+        <div class="mtc-dot" style="background:${TEAM_COLORS[i]}"></div>
+        <div class="mtc-name">${t.active ? (TEAM_EMOJIS[i]+' '+t.name) : '–'}</div>
+      </div>
+      <div class="mtc-pts">${t.points||0}</div>
+    `;
+    td.appendChild(card);
+  }
+
+  // Phrase
+  const p = state.currentPhrase;
+  if (p) {
+    document.getElementById('mod-phrase-text').textContent = p.es;
+    document.getElementById('mod-category-text').textContent = p.cat_es + ' · ' + p.cat_en;
+  }
+
+  // Turn info
+  const ct = teams[state.currentTeamTurn];
+  document.getElementById('mod-turn-info').innerHTML =
+    `Turn: <strong>${ct ? ct.name : '–'}</strong> · Points value: <span class="mod-points">${state.spinValue ? '+'+state.spinValue : '?'}</span>`;
+
+  // Timer
+  if (state.timerStart && state.timerDuration) {
+    const elapsed = (Date.now() - state.timerStart) / 1000;
+    const left = Math.max(0, Math.ceil(state.timerDuration - elapsed));
+    document.getElementById('mod-timer-display').textContent = `⏱ ${left}s`;
+  } else {
+    document.getElementById('mod-timer-display').textContent = '⏱ –';
+  }
+
+  // Button states
+  const spinning = state.status === 'spinning' || state.status === 'waiting';
+  const canAnswer = state.status === 'playing' && state.wheelSpun;
+  document.getElementById('btn-spin').disabled = state.status !== 'waiting' && state.status !== 'nextup';
+  document.getElementById('btn-correct').disabled = !canAnswer;
+  document.getElementById('btn-wrong').disabled = !canAnswer;
+  document.getElementById('btn-next-phrase').disabled = state.status !== 'rounddone';
+
+  document.getElementById('mod-game-code').textContent =
+    `Game Room: corona_gloria_game · Firebase`;
+}
+
+// =====================================================
+// PLAYER RENDER
+// =====================================================
+function renderPlayer(state) {
+  if (!state || myTeamIdx < 0) return;
+  const teams = state.teams || {};
+  const myTeam = teams[myTeamIdx] || {};
+  const lang = myLang;
+
+  // Header
+  document.getElementById('ph-dot').style.background = TEAM_COLORS[myTeamIdx];
+  document.getElementById('ph-name').textContent = myTeam.name || '–';
+  document.getElementById('ph-pts').textContent = (myTeam.points||0) + ' pts';
+
+  // Phrase mini
+  const p = state.currentPhrase;
+  if (p) {
+    document.getElementById('ppm-cat').textContent = lang === 'es' ? p.cat_es : p.cat_en;
+    renderPhraseBoard('ppm-phrase', p.es, state.revealedLetters || [], 'player');
+  }
+
+  // My turn?
+  const isMyTurn = state.currentTeamTurn === myTeamIdx && state.status === 'playing' && state.wheelSpun;
+  document.getElementById('my-turn-banner').style.display = isMyTurn ? 'block' : 'none';
+  document.getElementById('waiting-turn-banner').style.display = isMyTurn ? 'none' : 'block';
+
+  document.getElementById('mtb-title').textContent = lang === 'es' ? '🎯 ¡Tu turno!' : '🎯 Your Turn!';
+  document.getElementById('mtb-sub').textContent = lang === 'es' ? 'Elige una letra' : 'Choose a letter';
+  document.getElementById('wb-title').textContent = lang === 'es' ? '⏳ Esperando tu turno...' : '⏳ Waiting for your turn...';
+  document.getElementById('wb-sub').textContent = lang === 'es' ? 'Mira la pantalla del proyector' : 'Watch the projector screen';
+
+  // Build keyboard if not built
+  if (!document.getElementById('kb-row-1').children.length) {
+    buildKeyboard();
+  }
+
+  // Update used keys
+  const revealed = state.revealedLetters || [];
+  document.querySelectorAll('.kb-key').forEach(btn => {
+    const letter = btn.dataset.letter;
+    btn.disabled = !isMyTurn;
+    if (revealed.includes(letter)) {
+      btn.className = 'kb-key used-correct';
+    }
+  });
+
+  if (!isMyTurn) {
+    document.querySelectorAll('.kb-key').forEach(b => b.disabled = true);
+  }
+}
+
+function buildKeyboard() {
+  const rows = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L','Ñ'],
+    ['Z','X','C','V','B','N','M']
+  ];
+  rows.forEach((row, ri) => {
+    const rowEl = document.getElementById(`kb-row-${ri+1}`);
+    rowEl.innerHTML = '';
+    row.forEach(letter => {
+      const btn = document.createElement('button');
+      btn.className = 'kb-key';
+      btn.textContent = letter;
+      btn.dataset.letter = letter;
+      btn.onclick = () => playerGuessLetter(letter, btn);
+      rowEl.appendChild(btn);
+    });
+  });
+}
+
+function playerGuessLetter(letter, btn) {
+  if (!currentState) return;
+  if (currentState.currentTeamTurn !== myTeamIdx) return;
+  if (currentState.status !== 'playing' || !currentState.wheelSpun) return;
+
+  const phrase = currentState.currentPhrase.es.toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const normLetter = letter.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  btn.disabled = true;
+
+  if (phrase.includes(normLetter)) {
+    // Correct!
+    const newRevealed = [...(currentState.revealedLetters || []), normLetter];
+    updateGame({
+      revealedLetters: newRevealed,
+      statusMsg: `✅ ${letter} — ${myLang === 'es' ? '¡Correcto!' : 'Correct!'}`,
+      statusType: 'correct',
+    });
+    btn.className = 'kb-key used-correct';
+
+    // Check if phrase complete
+    const phraseLetters = phrase.replace(/ /g,'').split('').filter((c,i,a)=>a.indexOf(c)===i);
+    const allRevealed = phraseLetters.every(l => newRevealed.includes(l));
+    if (allRevealed) {
+      // Award points
+      const pts = (currentState.teams[myTeamIdx].points||0) + (currentState.spinValue||100);
+      updateGame({
+        [`teams/${myTeamIdx}/points`]: pts,
+        statusMsg: myLang === 'es' ? `🎉 ¡${currentState.teams[myTeamIdx].name} completó la frase! +${currentState.spinValue} pts` : `🎉 ${currentState.teams[myTeamIdx].name} solved it! +${currentState.spinValue} pts`,
+        statusType: 'correct',
+        status: 'rounddone',
+        timerStart: null,
+      });
+      confetti();
+    }
+  } else {
+    // Wrong — pass turn
+    btn.className = 'kb-key used-wrong';
+    const nextTeam = getNextActiveTeam(currentState);
+    updateGame({
+      statusMsg: `❌ ${letter} — ${myLang === 'es' ? 'No está. Turno para ' : 'Not there. Turn passes to '} ${currentState.teams[nextTeam]?.name || '–'}`,
+      statusType: 'wrong',
+      currentTeamTurn: nextTeam,
+      wheelSpun: false,
+      spinValue: null,
+      status: 'nextup',
+      timerStart: null,
+    });
+  }
+}
+
+function getNextActiveTeam(state) {
+  const teams = state.teams || {};
+  let next = (state.currentTeamTurn + 1) % 4;
+  let tries = 0;
+  while (tries < 4) {
+    if (teams[next] && teams[next].active) return next;
+    next = (next + 1) % 4;
+    tries++;
+  }
+  return state.currentTeamTurn;
+}
+
+// =====================================================
+// MODERATOR ACTIONS
+// =====================================================
+function modSpin() {
+  if (!currentState) return;
+  const val = WHEEL_VALUES[Math.floor(Math.random() * WHEEL_VALUES.length)];
+  updateGame({
+    spinValue: val,
+    wheelSpun: false,
+    status: 'spinning',
+    statusMsg: '',
+  });
+  setTimeout(() => {
+    updateGame({
+      wheelSpun: true,
+      status: 'playing',
+      statusMsg: currentState?.teams?.[currentState.currentTeamTurn]?.name + ` — Pick a letter / Elige una letra`,
+      statusType: '',
+      timerStart: Date.now(),
+      timerDuration: 20,
+    });
+  }, 3500);
+}
+
+function modCorrect() {
+  if (!currentState) return;
+  const pts = (currentState.teams[currentState.currentTeamTurn].points||0) + (currentState.spinValue||100);
+  updateGame({
+    [`teams/${currentState.currentTeamTurn}/points`]: pts,
+    statusMsg: `✅ +${currentState.spinValue} pts — ${currentState.teams[currentState.currentTeamTurn].name}`,
+    statusType: 'correct',
+    status: 'rounddone',
+    timerStart: null,
+  });
+  confetti();
+}
+
+function modWrong() {
+  if (!currentState) return;
+  const next = getNextActiveTeam(currentState);
+  updateGame({
+    statusMsg: `❌ Turn passes to ${currentState.teams[next]?.name || '–'}`,
+    statusType: 'wrong',
+    currentTeamTurn: next,
+    wheelSpun: false,
+    spinValue: null,
+    status: 'nextup',
+    timerStart: null,
+  });
+}
+
+function modNextPhrase() {
+  if (!currentState) return;
+  const phrases = currentState.phrases || [];
+  const nextIdx = (currentState.phraseIdx||0) + 1;
+  if (nextIdx >= phrases.length) {
+    modEndGame(); return;
+  }
+  // Next team turn
+  const next = getNextActiveTeam(currentState);
+  updateGame({
+    phraseIdx: nextIdx,
+    currentPhrase: phrases[nextIdx],
+    revealedLetters: [],
+    currentTeamTurn: next,
+    spinValue: null,
+    wheelSpun: false,
+    status: 'nextup',
+    statusMsg: '',
+    statusType: '',
+    timerStart: null,
+    round: Math.floor(nextIdx / 4) + 1,
+  });
+}
+
+function modEndGame() {
+  updateGame({ status: 'gameover', timerStart: null });
+}
+
+// =====================================================
+// WAITING ROOM RENDER
+// =====================================================
+function renderWaiting(state) {
+  if (!state) return;
+  const teams = state.teams || {};
+  const list = document.getElementById('teams-joined-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  for (let i = 0; i < 4; i++) {
+    const t = teams[i];
+    const row = document.createElement('div');
+    row.className = `team-joined-row${t && t.active && i === myTeamIdx ? ' active' : ''}`;
+    row.innerHTML = `
+      <div class="tj-dot" style="background:${TEAM_COLORS[i]}"></div>
+      <div class="tj-name">${TEAM_EMOJIS[i]} ${t && t.active ? t.name : (myLang === 'es' ? 'Esperando...' : 'Waiting...')}</div>
+      <div class="tj-status">${t && t.active ? '✅' : '⏳'}</div>
+    `;
+    list.appendChild(row);
+  }
+
+  if (state.status === 'playing' || state.status === 'nextup') {
+    showScreen('player');
+    renderPlayer(state);
+  }
+}
+
+// =====================================================
+// GAME OVER
+// =====================================================
+function renderGameOver(state) {
+  const teams = state.teams || {};
+  const sorted = Object.entries(teams)
+    .filter(([,t]) => t.active)
+    .sort(([,a],[,b]) => (b.points||0) - (a.points||0));
+
+  const podium = document.getElementById('podium');
+  podium.innerHTML = '';
+
+  // Arrange: 2nd, 1st, 3rd
+  const order = sorted.length >= 3
+    ? [sorted[1], sorted[0], sorted[2]]
+    : sorted.length === 2
+    ? [sorted[1], sorted[0]]
+    : [sorted[0]];
+
+  const placeClass = sorted.length >= 3 ? ['p2','p1','p3'] : ['p2','p1'];
+
+  order.forEach((entry, oi) => {
+    if (!entry) return;
+    const [idx, t] = entry;
+    const place = sorted.findIndex(([i]) => i === idx) + 1;
+    const div = document.createElement('div');
+    div.className = `podium-place ${placeClass[oi] || 'p3'}`;
+    div.style.background = `linear-gradient(135deg, ${TEAM_COLORS[idx]}88, ${TEAM_COLORS[idx]}44)`;
+    div.innerHTML = `
+      <div class="pod-crown">${CROWNS[place-1] || ''}</div>
+      <div class="pod-name">${TEAM_EMOJIS[idx]} ${t.name}</div>
+      <div class="pod-pts">${t.points||0} pts</div>
+      <div class="pod-rank">#${place}</div>
+    `;
+    podium.appendChild(div);
+  });
+
+  confetti();
+  confetti();
+}
+
+// =====================================================
+// WHEEL CANVAS
+// =====================================================
+function drawWheelIdle() {
+  drawWheel(0);
+}
+
+function drawWheel(angle) {
+  const canvas = document.getElementById('wheel-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 90, cy = 90, r = 82;
+  const n = WHEEL_VALUES.length;
+  ctx.clearRect(0, 0, 180, 180);
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,215,0,0.3)';
+  ctx.shadowBlur = 20;
+
+  for (let i = 0; i < n; i++) {
+    const start = angle + (i / n) * Math.PI * 2 - Math.PI/2;
+    const end = angle + ((i+1) / n) * Math.PI * 2 - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_COLORS[i];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle + ((i + 0.5) / n) * Math.PI * 2 - Math.PI/2);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 13px Nunito';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(WHEEL_VALUES[i], r * 0.62, 0);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 18, 0, Math.PI*2);
+  ctx.fillStyle = 'var(--navy, #0d1f3c)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,215,0,0.8)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = 'var(--gold, #FFD700)';
+  ctx.font = 'bold 14px Nunito';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('★', cx, cy);
+
+  ctx.restore();
+  wheelAngle = angle;
+}
+
+function spinWheelTo(targetValue) {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  // Find segment for target value
+  const n = WHEEL_VALUES.length;
+  const targetIdx = WHEEL_VALUES.indexOf(targetValue);
+  const targetAngle = (2 * Math.PI * targetIdx / n);
+  const totalRotations = Math.PI * 2 * (5 + Math.random() * 3);
+  const finalAngle = totalRotations + targetAngle;
+
+  let start = null;
+  const duration = 3000;
+  const startAngle = wheelAngle;
+
+  function frame(ts) {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
+    const current = startAngle + finalAngle * ease;
+    drawWheel(current);
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      wheelSpinning = false;
+      drawWheel(current);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// =====================================================
+// CONFETTI
+// =====================================================
+function confetti() {
+  const colors = ['#FFD700','#FF6B35','#4CAF50','#2196F3','#E91E63','#9C27B0'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.cssText = `
+        left: ${Math.random()*100}vw;
+        width: ${6+Math.random()*8}px;
+        height: ${6+Math.random()*8}px;
+        background: ${colors[Math.floor(Math.random()*colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${1.5+Math.random()*2}s;
+        animation-delay: 0s;
+      `;
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 3500);
+    }, i * 30);
+  }
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =====================================================
+// TIMER LOOP (client side display)
+// =====================================================
+setInterval(() => {
+  if (!currentState || !currentState.timerStart) return;
+  const elapsed = (Date.now() - currentState.timerStart) / 1000;
+  const left = Math.max(0, currentState.timerDuration - elapsed);
+
+  if (myRole === 'projector') {
+    const tc = document.getElementById('proj-timer');
+    if (tc) {
+      tc.textContent = Math.ceil(left);
+      tc.className = 'timer-circle' + (left <= 5 ? ' urgent' : '');
+    }
+  }
+  if (myRole === 'moderator') {
+    const md = document.getElementById('mod-timer-display');
+    if (md) md.textContent = `⏱ ${Math.ceil(left)}s`;
+  }
+
+  // Auto timeout
+  if (left <= 0 && currentState.status === 'playing' && myRole === 'moderator') {
+    const next = getNextActiveTeam(currentState);
+    updateGame({
+      statusMsg: `⏰ Time out! Turn passes to ${currentState.teams[next]?.name || '–'}`,
+      statusType: 'timeout',
+      currentTeamTurn: next,
+      wheelSpun: false,
+      spinValue: null,
+      status: 'nextup',
+      timerStart: null,
+    });
+  }
+}, 500);
+
+// Auto draw wheel on projector
+setTimeout(() => {
+  if (myRole === 'projector') drawWheelIdle();
+}, 200);
+</script>
+</body>
+</html>
