@@ -1,1 +1,234 @@
-<meta http-equiv="refresh" content="0; url=corona_de_gloria.html">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>👑 Corona de Gloria</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===================== SCREEN: ROLE SELECT ===================== -->
+<div id="screen-role" class="screen active">
+  <div class="church-header">
+    <img class="church-logo" src="assets/logo.jpg" alt="Emanuel">
+    <div class="church-name-hdr"><strong>Iglesia Bautista Emanuel</strong>Oklahoma City, OK</div>
+  </div>
+  <div class="logo-wrap">
+    <span class="logo-crown">👑</span>
+    <div class="logo-title">Corona de Gloria</div>
+    <div class="logo-sub">Biblical Word Game · Juego Bíblico</div>
+  </div>
+
+  <div class="role-cards">
+    <div class="role-card" onclick="selectRole('moderator')" style="border-color:#FFD700;background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,165,0,0.1))">
+      <span class="rc-icon">🎮</span>
+      <div class="rc-title" style="color:#FFD700">Moderator / Moderador</div>
+      <div class="rc-desc">Control the game · Controla el juego<br><small style="color:rgba(255,215,0,0.6)">Abre el proyector desde aquí</small></div>
+    </div>
+    <div class="role-card" onclick="selectRole('player')">
+      <span class="rc-icon">📱</span>
+      <div class="rc-title">Player / Jugador</div>
+      <div class="rc-desc">Join a team / Únete a un equipo</div>
+    </div>
+  </div>
+
+  <div class="config-notice" style="background:rgba(39,174,96,0.15);border-color:rgba(39,174,96,0.4);">
+    <p>✅ <strong>Firebase configurado y listo</strong> · corona-gloria<br>
+    Todos entran al mismo link · Everyone joins the same link</p>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: TEAM SELECT ===================== -->
+<div id="screen-team" class="screen">
+  <div class="team-header">
+    <h2 id="team-select-title">Choose Your Team</h2>
+    <p id="team-select-sub">Select your team and enter your name</p>
+  </div>
+
+  <div class="lang-row">
+    <button class="lang-btn active" onclick="setLang('en', this)">🇺🇸 English</button>
+    <button class="lang-btn" onclick="setLang('es', this)">🇲🇽 Español</button>
+  </div>
+
+  <div class="team-grid">
+    <div class="team-btn t1" id="tbtn-0" onclick="selectTeam(0)">
+      <span class="t-emoji">🔴</span>
+      <span id="tname-0">Team 1</span>
+    </div>
+    <div class="team-btn t2" id="tbtn-1" onclick="selectTeam(1)">
+      <span class="t-emoji">🔵</span>
+      <span id="tname-1">Team 2</span>
+    </div>
+    <div class="team-btn t3" id="tbtn-2" onclick="selectTeam(2)">
+      <span class="t-emoji">🟢</span>
+      <span id="tname-2">Team 3</span>
+    </div>
+    <div class="team-btn t4" id="tbtn-3" onclick="selectTeam(3)">
+      <span class="t-emoji">🟣</span>
+      <span id="tname-3">Team 4</span>
+    </div>
+  </div>
+
+  <div class="name-input-wrap">
+    <input class="name-input" id="player-name-input" type="text" maxlength="20" placeholder="Your team name / Nombre del equipo">
+    <button class="join-btn" id="join-btn" onclick="joinGame()" disabled>Join Game / Unirse al Juego →</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: WAITING ===================== -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-title" id="waiting-title">Waiting for the game to start...</div>
+  <div class="waiting-sub" id="waiting-sub">The moderator will begin soon / El moderador comenzará pronto</div>
+
+  <div class="teams-joined" id="teams-joined-list"></div>
+
+  <div class="pulse" style="color:rgba(255,215,0,0.5);font-size:13px;" id="waiting-pulse">⏳ Waiting... / Esperando...</div>
+</div>
+
+<!-- ===================== SCREEN: PROJECTOR ===================== -->
+<div id="screen-projector" class="screen">
+  <div class="church-header">
+    <img class="church-logo" src="assets/logo.jpg" alt="Emanuel">
+    <div class="church-name-hdr"><strong>Iglesia Bautista Emanuel</strong>Oklahoma City, OK</div>
+  </div>
+  <div class="proj-header">
+    <div class="proj-logo">👑 Corona de Gloria</div>
+    <div class="proj-round" id="proj-round">Round 1</div>
+  </div>
+
+  <div class="teams-bar" id="teams-bar">
+    <!-- filled dynamically -->
+  </div>
+
+  <div class="proj-main">
+    <div class="wheel-wrap" id="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheel-canvas" width="180" height="180"></canvas>
+    </div>
+
+    <div class="category-badge" id="proj-category">Category / Categoría</div>
+
+    <div class="phrase-board" id="proj-phrase-board">
+      <div class="phrase-words" id="proj-phrase-words"></div>
+    </div>
+
+    <div class="timer-row">
+      <div class="timer-circle" id="proj-timer">15</div>
+      <div class="turn-label" id="proj-turn-label">Waiting to start...</div>
+      <div class="points-value-badge" id="proj-points-badge">?</div>
+    </div>
+
+    <div class="status-msg" id="proj-status"></div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: MODERATOR ===================== -->
+<div id="screen-moderator" class="screen">
+  <div class="church-header">
+    <img class="church-logo" src="assets/logo.jpg" alt="Emanuel">
+    <div class="church-name-hdr"><strong>Iglesia Bautista Emanuel</strong>Oklahoma City, OK</div>
+  </div>
+  <div class="mod-header">
+    <h2>🎮 Moderator Panel</h2>
+    <p id="mod-game-code">Game room: loading...</p>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap">
+    <button class="mod-btn" style="background:linear-gradient(135deg,#1a3a6b,#2980b9);color:white;flex:1;font-size:13px" onclick="openProjector()">📺 Abrir Proyector</button>
+    <button class="mod-btn" style="background:linear-gradient(135deg,#6B2121,#c0392b);color:white;flex:1;font-size:13px" onclick="resetGame()">🔄 Reiniciar Juego</button>
+  </div>
+
+  <div class="mod-teams" id="mod-teams-display"></div>
+
+  <div class="mod-timer-display" id="mod-timer-display">⏱ –</div>
+
+  <div class="mod-phrase-box">
+    <div class="mod-phrase-text" id="mod-phrase-text">–</div>
+    <div class="mod-category" id="mod-category-text">–</div>
+    <div class="mod-turn-info" id="mod-turn-info">–</div>
+  </div>
+
+  <div class="mod-actions">
+    <button class="mod-btn btn-spin" id="btn-spin" onclick="modSpin()">🎡 Spin Wheel / Girar Ruleta</button>
+    <button class="mod-btn btn-correct" id="btn-correct" onclick="modCorrect()" disabled>✅ Correct / Correcto (+pts)</button>
+    <button class="mod-btn btn-wrong" id="btn-wrong" onclick="modWrong()" disabled>❌ Wrong / Incorrecto → Next</button>
+    <button class="mod-btn btn-next" id="btn-next-phrase" onclick="modNextPhrase()" disabled>⏭ Next Phrase / Siguiente Frase</button>
+    <button class="mod-btn btn-end" onclick="modEndGame()">🏁 End Game / Terminar Juego</button>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: PLAYER ===================== -->
+<div id="screen-player" class="screen">
+  <div class="player-header">
+    <div class="ph-team">
+      <div class="ph-dot" id="ph-dot"></div>
+      <div class="ph-name" id="ph-name">–</div>
+    </div>
+    <div class="ph-pts" id="ph-pts">0 pts</div>
+  </div>
+
+  <div class="player-content">
+    <div class="player-phrase-mini" id="player-phrase-mini">
+      <div class="ppm-cat" id="ppm-cat">–</div>
+      <div class="ppm-phrase" id="ppm-phrase"></div>
+    </div>
+
+    <div id="my-turn-banner" class="my-turn-banner" style="display:none;">
+      <div class="mtb-title" id="mtb-title">🎯 Your Turn!</div>
+      <div class="mtb-sub" id="mtb-sub">Choose a letter / Elige una letra</div>
+    </div>
+
+    <div id="waiting-turn-banner" class="waiting-banner">
+      <div class="wb-title" id="wb-title">⏳ Waiting for your turn...</div>
+      <div class="wb-sub" id="wb-sub">Watch the projector screen</div>
+    </div>
+
+    <div class="keyboard-wrap" id="keyboard-wrap">
+      <div class="kb-row" id="kb-row-1"></div>
+      <div class="kb-row" id="kb-row-2"></div>
+      <div class="kb-row" id="kb-row-3"></div>
+    </div>
+
+    <button class="solve-btn" id="solve-btn" onclick="playerSolvePhrase()" disabled>
+      🏆 Resolver la frase completa / Solve the phrase
+    </button>
+
+    <!-- Panel oculto para escribir la frase -->
+    <div id="solve-panel" style="display:none;width:100%;margin-top:10px;">
+      <input id="solve-input" type="text" class="name-input"
+        placeholder="Escribe la frase completa..."
+        style="text-transform:uppercase;letter-spacing:1px"
+        onkeydown="if(event.key==='Enter')playerSubmitSolve()">
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="join-btn" onclick="playerSubmitSolve()" style="font-size:14px">✅ Enviar</button>
+        <button class="join-btn" onclick="cancelSolve()"
+          style="background:rgba(255,255,255,0.1);color:white;border:2px solid rgba(255,255,255,0.2);font-size:14px">✖ Cancelar</button>
+      </div>
+    </div>
+
+    <div class="player-status" id="player-status"></div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN: GAME OVER ===================== -->
+<div id="screen-gameover" class="screen">
+  <div class="go-title">🏆 Game Over!</div>
+  <div class="go-sub">FINAL RESULTS · RESULTADOS FINALES</div>
+  <div class="podium" id="podium"></div>
+  <button class="go-restart-btn" onclick="location.reload()">🔄 Play Again / Jugar de Nuevo</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
