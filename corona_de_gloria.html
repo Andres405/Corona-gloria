@@ -457,13 +457,22 @@ body {
 .player-status.my-win { color: #2ecc71; font-size: 18px; }
 .player-status.my-lose { color: #e74c3c; }
 
-/* Botón resolver frase */
-.solve-btn {
-  width: 100%; padding: 16px; border-radius: 14px; border: 2px solid var(--gold);
-  background: linear-gradient(135deg, rgba(255,165,0,0.25), rgba(255,215,0,0.15));
-  color: var(--gold); font-family: 'Cinzel Decorative', serif;
+/* Botones de acción del jugador */
+.player-action-btn {
+  width: 100%; padding: 16px; border-radius: 14px; border: none;
+  font-family: 'Cinzel Decorative', serif;
   font-size: 15px; cursor: pointer; transition: all 0.2s;
-  margin-top: 4px;
+  margin-top: 6px; font-weight: 700;
+}
+.spin-player-btn {
+  background: linear-gradient(135deg, #FFD700, #f39c12);
+  color: #0d1f3c;
+}
+.spin-player-btn:active { transform: scale(0.97); }
+.spin-player-btn:disabled { opacity: 0.35; pointer-events: none; }
+.solve-btn {
+  background: linear-gradient(135deg, rgba(255,165,0,0.25), rgba(255,215,0,0.15));
+  color: var(--gold); border: 2px solid var(--gold);
 }
 .solve-btn:active { transform: scale(0.97); }
 .solve-btn:disabled { opacity: 0.35; pointer-events: none; }
@@ -672,6 +681,18 @@ body {
     <button class="mod-btn" style="background:linear-gradient(135deg,#6B2121,#c0392b);color:white;flex:1;font-size:13px" onclick="resetGame()">🔄 Reiniciar Juego</button>
   </div>
 
+  <!-- Botón Iniciar — visible solo cuando el juego está en espera -->
+  <div id="start-game-wrap" style="padding:0 16px 12px;display:none">
+    <button id="btn-start-game" class="mod-btn"
+      style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;font-size:16px;width:100%;padding:16px"
+      onclick="modStartGame()">
+      ▶️ Iniciar Juego / Start Game
+    </button>
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-top:6px" id="teams-ready-label">
+      Esperando jugadores...
+    </div>
+  </div>
+
   <div class="mod-teams" id="mod-teams-display"></div>
 
   <div class="mod-timer-display" id="mod-timer-display">⏱ –</div>
@@ -683,9 +704,6 @@ body {
   </div>
 
   <div class="mod-actions">
-    <button class="mod-btn btn-spin" id="btn-spin" onclick="modSpin()">🎡 Spin Wheel / Girar Ruleta</button>
-    <button class="mod-btn btn-correct" id="btn-correct" onclick="modCorrect()" disabled>✅ Correct / Correcto (+pts)</button>
-    <button class="mod-btn btn-wrong" id="btn-wrong" onclick="modWrong()" disabled>❌ Wrong / Incorrecto → Next</button>
     <button class="mod-btn btn-next" id="btn-next-phrase" onclick="modNextPhrase()" disabled>⏭ Next Phrase / Siguiente Frase</button>
     <button class="mod-btn btn-end" onclick="modEndGame()">🏁 End Game / Terminar Juego</button>
   </div>
@@ -717,14 +735,22 @@ body {
       <div class="wb-sub" id="wb-sub">Watch the projector screen</div>
     </div>
 
+    <!-- Botón GIRAR — solo visible cuando es el turno del jugador y no ha girado -->
+    <button class="player-action-btn spin-player-btn" id="spin-player-btn"
+      onclick="playerSpin()" style="display:none">
+      🎡 ¡Girar Ruleta! / Spin the Wheel!
+    </button>
+
     <div class="keyboard-wrap" id="keyboard-wrap">
       <div class="kb-row" id="kb-row-1"></div>
       <div class="kb-row" id="kb-row-2"></div>
       <div class="kb-row" id="kb-row-3"></div>
     </div>
 
-    <button class="solve-btn" id="solve-btn" onclick="playerSolvePhrase()" disabled>
-      🏆 Resolver la frase completa / Solve the phrase
+    <!-- Botón RESOLVER FRASE — visible cuando es turno y ya giró -->
+    <button class="player-action-btn solve-btn" id="solve-btn"
+      onclick="playerSolvePhrase()" style="display:none">
+      🏆 Resolver la frase / Solve the phrase
     </button>
 
     <!-- Panel oculto para escribir la frase -->
@@ -1187,7 +1213,7 @@ function renderModerator(state) {
   // Turn info
   const ct = teams[state.currentTeamTurn];
   document.getElementById('mod-turn-info').innerHTML =
-    `Turn: <strong>${ct ? ct.name : '–'}</strong> · Points value: <span class="mod-points">${state.spinValue ? '+'+state.spinValue : '?'}</span>`;
+    `Turno: <strong>${ct ? ct.name : '–'}</strong> · Valor: <span class="mod-points">${state.spinValue ? '+'+state.spinValue : '?'}</span>`;
 
   // Timer
   if (state.timerStart && state.timerDuration) {
@@ -1198,12 +1224,20 @@ function renderModerator(state) {
     document.getElementById('mod-timer-display').textContent = '⏱ –';
   }
 
-  // Button states
-  const spinning = state.status === 'spinning' || state.status === 'waiting';
-  const canAnswer = state.status === 'playing' && state.wheelSpun;
-  document.getElementById('btn-spin').disabled = state.status !== 'waiting' && state.status !== 'nextup';
-  document.getElementById('btn-correct').disabled = !canAnswer;
-  document.getElementById('btn-wrong').disabled = !canAnswer;
+  // Botón de inicio — solo en estado 'waiting', con al menos 1 equipo activo
+  const activeTeams = Object.values(teams).filter(t => t && t.active);
+  const isWaiting = state.status === 'waiting';
+  const startWrap = document.getElementById('start-game-wrap');
+  const teamsLabel = document.getElementById('teams-ready-label');
+  if (startWrap) {
+    startWrap.style.display = isWaiting ? 'block' : 'none';
+    if (teamsLabel) {
+      const n = activeTeams.length;
+      teamsLabel.textContent = n === 0
+        ? 'Ningún jugador conectado aún...'
+        : `${n} equipo${n>1?'s':''} listo${n>1?'s':''} — presiona Iniciar cuando estés listo`;
+    }
+  }
   document.getElementById('btn-next-phrase').disabled = state.status !== 'rounddone';
 
   document.getElementById('mod-game-code').textContent =
@@ -1231,56 +1265,77 @@ function renderPlayer(state) {
     renderPhraseBoard('ppm-phrase', p.es, state.revealedLetters || [], 'player');
   }
 
-  // My turn?
-  const isMyTurn = state.currentTeamTurn === myTeamIdx && state.status === 'playing' && state.wheelSpun;
+  // ¿Es mi turno?
+  const isMyTurn = state.currentTeamTurn === myTeamIdx;
+  // ¿Ya giró la rueda?
+  const hasSpun = state.wheelSpun && state.spinValue;
+  // ¿Puede elegir letras? (es su turno, ya giró, y el juego está en 'playing')
+  const canPickLetter = isMyTurn && hasSpun && state.status === 'playing';
+  // ¿Puede girar? (es su turno, no ha girado, y el juego está esperando giro)
+  const canSpin = isMyTurn && !hasSpun && (state.status === 'nextup' || state.status === 'waiting');
+
+  // Banners
   document.getElementById('my-turn-banner').style.display = isMyTurn ? 'block' : 'none';
   document.getElementById('waiting-turn-banner').style.display = isMyTurn ? 'none' : 'block';
 
-  document.getElementById('mtb-title').textContent = lang === 'es' ? '🎯 ¡Tu turno!' : '🎯 Your Turn!';
-  document.getElementById('mtb-sub').textContent = lang === 'es' ? 'Elige una letra' : 'Choose a letter';
+  if (isMyTurn) {
+    if (canSpin) {
+      document.getElementById('mtb-title').textContent = lang === 'es' ? '🎡 ¡Tu turno!' : '🎡 Your Turn!';
+      document.getElementById('mtb-sub').textContent = lang === 'es' ? '¡Gira la ruleta!' : 'Spin the wheel!';
+    } else if (canPickLetter) {
+      document.getElementById('mtb-title').textContent = lang === 'es' ? '🎯 ¡Elige una letra!' : '🎯 Pick a letter!';
+      document.getElementById('mtb-sub').textContent = lang === 'es' ? `Valor: +${state.spinValue} pts por letra` : `Value: +${state.spinValue} pts per letter`;
+    } else {
+      document.getElementById('mtb-title').textContent = lang === 'es' ? '⏳ Espera...' : '⏳ Wait...';
+      document.getElementById('mtb-sub').textContent = '';
+    }
+  }
+
   document.getElementById('wb-title').textContent = lang === 'es' ? '⏳ Esperando tu turno...' : '⏳ Waiting for your turn...';
   document.getElementById('wb-sub').textContent = lang === 'es' ? 'Mira la pantalla del proyector' : 'Watch the projector screen';
 
-  // Build keyboard if not built
+  // Botón GIRAR
+  const spinBtn = document.getElementById('spin-player-btn');
+  if (spinBtn) {
+    spinBtn.style.display = canSpin ? 'block' : 'none';
+    spinBtn.disabled = !canSpin;
+  }
+
+  // Teclado
   if (!document.getElementById('kb-row-1').children.length) {
     buildKeyboard();
   }
 
-  // BUG 3 FIX: limpiar y repintar teclado desde estado Firebase (no desde variable local)
+  // BUG FIX: limpiar y repintar teclado desde Firebase
   const revealed = state.revealedLetters || [];
+  const wrong = state.wrongLetters || [];
   document.querySelectorAll('.kb-key').forEach(btn => {
     const letter = btn.dataset.letter;
-    // Resetear primero
     btn.className = 'kb-key';
     btn.disabled = true;
 
-    // Marcar usadas como correctas si están en revealedLetters
     if (revealed.includes(letter)) {
       btn.className = 'kb-key used-correct';
       return;
     }
-    // Marcar usadas como incorrectas si están en wrongLetters
-    const wrong = state.wrongLetters || [];
     if (wrong.includes(letter)) {
       btn.className = 'kb-key used-wrong';
       return;
     }
-    // Habilitar solo si es mi turno
-    if (isMyTurn) {
+    if (canPickLetter) {
       btn.disabled = false;
     }
   });
 
-  // Botón resolver frase: visible solo cuando es mi turno y hay al menos una letra revelada
+  // Botón RESOLVER FRASE
   const solveBtn = document.getElementById('solve-btn');
   if (solveBtn) {
-    solveBtn.disabled = !isMyTurn;
-    solveBtn.style.display = 'block';
+    // Visible solo cuando es mi turno y ya giré (para poder resolver en cualquier momento)
+    solveBtn.style.display = canPickLetter ? 'block' : 'none';
+    solveBtn.disabled = !canPickLetter;
   }
-  // Ocultar panel de resolver si no es mi turno
-  if (!isMyTurn) {
-    cancelSolve();
-  }
+  // Ocultar panel de resolver si no es mi turno o no puedo elegir letras
+  if (!canPickLetter) cancelSolve();
 }
 
 function buildKeyboard() {
@@ -1303,6 +1358,37 @@ function buildKeyboard() {
   });
 }
 
+// =====================================================
+// JUGADOR GIRA LA RULETA
+// =====================================================
+function playerSpin() {
+  if (!currentState) return;
+  if (currentState.currentTeamTurn !== myTeamIdx) return;
+  if (currentState.status !== 'nextup' && currentState.status !== 'waiting') return;
+
+  const val = WHEEL_VALUES[Math.floor(Math.random() * WHEEL_VALUES.length)];
+  const teamName = currentState?.teams?.[myTeamIdx]?.name || '–';
+
+  updateGame({
+    spinValue: val,
+    wheelSpun: false,
+    status: 'spinning',
+    statusMsg: `🎡 ${teamName} gira la ruleta...`,
+    statusType: '',
+  });
+
+  setTimeout(() => {
+    updateGame({
+      wheelSpun: true,
+      status: 'playing',
+      statusMsg: `${teamName} — ¡Elige una letra! / Pick a letter`,
+      statusType: '',
+      timerStart: Date.now(),
+      timerDuration: 20,
+    });
+  }, 3500);
+}
+
 function playerGuessLetter(letter, btn) {
   if (!currentState) return;
   if (currentState.currentTeamTurn !== myTeamIdx) return;
@@ -1319,12 +1405,11 @@ function playerGuessLetter(letter, btn) {
     const newRevealed = [...(currentState.revealedLetters || []), normLetter];
     const pts = (currentState.teams[myTeamIdx].points||0) + (currentState.spinValue||100);
 
-    // Verificar si la frase está completamente revelada
+    // Verificar si frase completa
     const phraseLetters = [...new Set(phrase.replace(/ /g,'').split(''))];
     const allRevealed = phraseLetters.every(l => newRevealed.includes(l));
 
     if (allRevealed) {
-      // Frase completamente revelada — ronda terminada
       updateGame({
         revealedLetters: newRevealed,
         [`teams/${myTeamIdx}/points`]: pts,
@@ -1338,28 +1423,27 @@ function playerGuessLetter(letter, btn) {
       btn.className = 'kb-key used-correct';
       confetti();
     } else {
-      // ✅ Letra correcta pero frase incompleta → debe girar de nuevo
+      // ✅ Letra encontrada → debe GIRAR DE NUEVO para seguir acumulando
       updateGame({
         revealedLetters: newRevealed,
         [`teams/${myTeamIdx}/points`]: pts,
-        statusMsg: `✅ ¡${letter} encontrada! +${currentState.spinValue} pts — Gira de nuevo / Spin again`,
+        statusMsg: `✅ ¡${letter} encontrada! +${currentState.spinValue} pts — ${currentState.teams[myTeamIdx].name} gira de nuevo!`,
         statusType: 'correct',
-        wheelSpun: false,   // <-- obliga a girar antes de elegir otra letra
+        wheelSpun: false,   // obliga a girar antes de la siguiente letra
         spinValue: null,
-        status: 'nextup',   // el moderador deberá presionar Spin para que siga el mismo equipo
+        status: 'nextup',   // mismo equipo, pero debe girar
         timerStart: null,
       });
       btn.className = 'kb-key used-correct';
-      // Nota: status 'nextup' con el MISMO equipo en currentTeamTurn = equipo sigue su turno
     }
   } else {
-    // ❌ Letra no encontrada — pasa turno al siguiente
+    // ❌ Letra no encontrada — pasa al siguiente equipo
     btn.className = 'kb-key used-wrong';
     const nextTeam = getNextActiveTeam(currentState);
     const newWrong = [...(currentState.wrongLetters || []), normLetter];
     updateGame({
       wrongLetters: newWrong,
-      statusMsg: `❌ ${letter} no está. Turno para ${currentState.teams[nextTeam]?.name || '–'} / Not there. Turn passes to ${currentState.teams[nextTeam]?.name || '–'}`,
+      statusMsg: `❌ ${letter} no está. Turno para ${currentState.teams[nextTeam]?.name || '–'}`,
       statusType: 'wrong',
       currentTeamTurn: nextTeam,
       wheelSpun: false,
@@ -1371,22 +1455,22 @@ function playerGuessLetter(letter, btn) {
 }
 
 // =====================================================
-// BUG 2: RESOLVER FRASE COMPLETA
+// RESOLVER FRASE COMPLETA
 // =====================================================
 function playerSolvePhrase() {
   if (!currentState) return;
   if (currentState.currentTeamTurn !== myTeamIdx) return;
-  const panel = document.getElementById('solve-panel');
-  const btn = document.getElementById('solve-btn');
-  panel.style.display = 'block';
-  btn.style.display = 'none';
+  document.getElementById('solve-panel').style.display = 'block';
+  document.getElementById('solve-btn').style.display = 'none';
   document.getElementById('solve-input').value = '';
   document.getElementById('solve-input').focus();
 }
 
 function cancelSolve() {
-  document.getElementById('solve-panel').style.display = 'none';
-  document.getElementById('solve-btn').style.display = '';
+  const panel = document.getElementById('solve-panel');
+  const btn = document.getElementById('solve-btn');
+  if (panel) panel.style.display = 'none';
+  if (btn && btn.style.display !== 'none') btn.style.display = '';
 }
 
 function playerSubmitSolve() {
@@ -1399,10 +1483,8 @@ function playerSubmitSolve() {
   cancelSolve();
 
   if (input === correct) {
-    // 🎉 Respuesta correcta
     const bonus = currentState.spinValue || 200;
     const pts = (currentState.teams[myTeamIdx].points||0) + bonus;
-    // Revelar todas las letras
     const allLetters = [...new Set(correct.replace(/ /g,'').split(''))];
     updateGame({
       revealedLetters: allLetters,
@@ -1416,7 +1498,6 @@ function playerSubmitSolve() {
     });
     confetti();
   } else {
-    // ❌ Respuesta incorrecta — pierde turno
     const nextTeam = getNextActiveTeam(currentState);
     updateGame({
       statusMsg: `❌ Respuesta incorrecta. Turno para ${currentState.teams[nextTeam]?.name || '–'}`,
@@ -1433,68 +1514,47 @@ function playerSubmitSolve() {
 
 function getNextActiveTeam(state) {
   const teams = state.teams || {};
-  let next = (state.currentTeamTurn + 1) % 4;
-  let tries = 0;
-  while (tries < 4) {
-    if (teams[next] && teams[next].active) return next;
-    next = (next + 1) % 4;
-    tries++;
+  // Recoger solo los índices activos
+  const activeIdxs = [0,1,2,3].filter(i => teams[i] && teams[i].active);
+  if (activeIdxs.length === 0) return state.currentTeamTurn;
+  if (activeIdxs.length === 1) return activeIdxs[0]; // solo un equipo
+  const pos = activeIdxs.indexOf(state.currentTeamTurn);
+  return activeIdxs[(pos + 1) % activeIdxs.length];
+}
+
+function getFirstActiveTeam(state) {
+  const teams = state.teams || {};
+  for (let i = 0; i < 4; i++) {
+    if (teams[i] && teams[i].active) return i;
   }
-  return state.currentTeamTurn;
+  return 0;
+}
+
+// =====================================================
+// MODERADOR INICIA EL JUEGO
+// =====================================================
+function modStartGame() {
+  if (!currentState) return;
+  const teams = currentState.teams || {};
+  const activeTeams = Object.values(teams).filter(t => t && t.active);
+  if (activeTeams.length === 0) {
+    showToast('¡Necesitas al menos 1 equipo conectado! / Need at least 1 team!');
+    return;
+  }
+  const firstTeam = getFirstActiveTeam(currentState);
+  const firstTeamName = teams[firstTeam]?.name || '–';
+  updateGame({
+    status: 'nextup',
+    currentTeamTurn: firstTeam,
+    statusMsg: `¡Comienza el juego! Turno de ${firstTeamName}`,
+    statusType: '',
+  });
+  showToast(`🎮 ¡Juego iniciado! / Game started!`);
 }
 
 // =====================================================
 // MODERATOR ACTIONS
 // =====================================================
-function modSpin() {
-  if (!currentState) return;
-  const val = WHEEL_VALUES[Math.floor(Math.random() * WHEEL_VALUES.length)];
-  const teamName = currentState?.teams?.[currentState.currentTeamTurn]?.name || '–';
-  updateGame({
-    spinValue: val,
-    wheelSpun: false,
-    status: 'spinning',
-    statusMsg: '',
-  });
-  setTimeout(() => {
-    updateGame({
-      wheelSpun: true,
-      status: 'playing',
-      statusMsg: `${teamName} — Elige una letra / Pick a letter`,
-      statusType: '',
-      timerStart: Date.now(),
-      timerDuration: 20,
-    });
-  }, 3500);
-}
-
-function modCorrect() {
-  if (!currentState) return;
-  const pts = (currentState.teams[currentState.currentTeamTurn].points||0) + (currentState.spinValue||100);
-  updateGame({
-    [`teams/${currentState.currentTeamTurn}/points`]: pts,
-    statusMsg: `✅ +${currentState.spinValue} pts — ${currentState.teams[currentState.currentTeamTurn].name}`,
-    statusType: 'correct',
-    status: 'rounddone',
-    timerStart: null,
-  });
-  confetti();
-}
-
-function modWrong() {
-  if (!currentState) return;
-  const next = getNextActiveTeam(currentState);
-  updateGame({
-    statusMsg: `❌ Turn passes to ${currentState.teams[next]?.name || '–'}`,
-    statusType: 'wrong',
-    currentTeamTurn: next,
-    wheelSpun: false,
-    spinValue: null,
-    status: 'nextup',
-    timerStart: null,
-  });
-}
-
 function modNextPhrase() {
   if (!currentState) return;
   const phrases = currentState.phrases || [];
