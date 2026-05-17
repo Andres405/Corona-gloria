@@ -258,15 +258,20 @@ body {
   margin-bottom: 14px;
 }
 
-.phrase-words { display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: center; align-items: flex-end; }
+.phrase-words { display: flex; flex-wrap: wrap; gap: 8px 6px; justify-content: center; align-items: flex-end; }
 
 .word-group { display: flex; gap: 4px; }
 
 .word-spacer {
-  width: clamp(12px, 2vw, 22px);
+  width: clamp(16px, 2.5vw, 30px);
   height: clamp(34px,5.5vw,60px);
-  display: inline-block;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
   flex-shrink: 0;
+  color: rgba(255,215,0,0.2);
+  font-size: 10px;
 }
 
 .letter-box {
@@ -412,7 +417,7 @@ body {
   border-radius: 16px; padding: 16px; width: 100%; text-align: center;
 }
 .ppm-cat { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
-.ppm-phrase { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; align-items: flex-end; }
+.ppm-phrase { display: flex; flex-wrap: wrap; gap: 4px 6px; justify-content: center; align-items: flex-end; }
 .ppm-word { display: flex; gap: 3px; }
 .ppm-letter {
   width: 22px; height: 28px; border-bottom: 2px solid rgba(255,215,0,0.5);
@@ -923,8 +928,15 @@ function selectRole(role) {
     listenGame();
     // Init game if not exists or reset needed
     gameRef.once('value', snap => {
-      if (!snap.val() || !snap.val().status || snap.val().status === 'gameover') {
+      const data = snap.val();
+      if (!data || !data.status || data.status === 'gameover') {
         initGameState();
+      } else if (data.status !== 'waiting' && data.teams) {
+        // Hay sesión activa con equipos — avisar al moderador
+        const teamNames = Object.values(data.teams).filter(t=>t&&t.active).map(t=>t.name).join(', ');
+        if (teamNames) {
+          showToast('⚠️ Sesión anterior detectada: ' + teamNames);
+        }
       }
     });
   } else if (role === 'player') {
@@ -952,9 +964,11 @@ function openProjector() {
 })();
 
 function resetGame() {
-  if (confirm('¿Reiniciar el juego? Se borrarán todos los puntos y equipos.\nReset game? All points and teams will be cleared.')) {
-    initGameState();
-    showToast('¡Juego reiniciado! / Game reset!');
+  if (confirm('¿Iniciar nueva sesión?\nSe borrarán equipos, puntos y frases anteriores.\n\nStart new session? All teams, points and phrases will be reset.')) {
+    gameRef.remove().then(() => {
+      initGameState();
+      showToast('✅ Nueva sesión iniciada / New session started');
+    });
   }
 }
 
@@ -1167,10 +1181,11 @@ function renderPhraseBoard(containerId, text, revealed, prefix) {
   container.innerHTML = '';
   const words = text.split(' ');
   words.forEach((word, wi) => {
-    // Separador de espacio entre palabras (excepto antes de la primera)
+    // Separador visual entre palabras
     if (wi > 0) {
       const sp = document.createElement('div');
       sp.className = 'word-spacer';
+      sp.textContent = '╌';
       container.appendChild(sp);
     }
     const wg = document.createElement('div');
@@ -1394,9 +1409,9 @@ function playerSpin() {
       statusMsg: `${teamName} — ¡Elige una letra! / Pick a letter`,
       statusType: '',
       timerStart: Date.now(),
-      timerDuration: 20,
+      timerDuration: 30,
     });
-  }, 3500);
+  }, 3000);
 }
 
 function playerGuessLetter(letter, btn) {
