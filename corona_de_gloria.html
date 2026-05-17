@@ -258,9 +258,16 @@ body {
   margin-bottom: 14px;
 }
 
-.phrase-words { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: flex-end; }
+.phrase-words { display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: center; align-items: flex-end; }
 
 .word-group { display: flex; gap: 4px; }
+
+.word-spacer {
+  width: clamp(12px, 2vw, 22px);
+  height: clamp(34px,5.5vw,60px);
+  display: inline-block;
+  flex-shrink: 0;
+}
 
 .letter-box {
   width: clamp(28px,4vw,48px);
@@ -405,7 +412,7 @@ body {
   border-radius: 16px; padding: 16px; width: 100%; text-align: center;
 }
 .ppm-cat { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
-.ppm-phrase { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: flex-end; }
+.ppm-phrase { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: center; align-items: flex-end; }
 .ppm-word { display: flex; gap: 3px; }
 .ppm-letter {
   width: 22px; height: 28px; border-bottom: 2px solid rgba(255,215,0,0.5);
@@ -1159,7 +1166,13 @@ function renderPhraseBoard(containerId, text, revealed, prefix) {
   if (!container) return;
   container.innerHTML = '';
   const words = text.split(' ');
-  words.forEach(word => {
+  words.forEach((word, wi) => {
+    // Separador de espacio entre palabras (excepto antes de la primera)
+    if (wi > 0) {
+      const sp = document.createElement('div');
+      sp.className = 'word-spacer';
+      container.appendChild(sp);
+    }
     const wg = document.createElement('div');
     wg.className = prefix === 'proj' ? 'word-group' : 'ppm-word';
     word.split('').forEach(ch => {
